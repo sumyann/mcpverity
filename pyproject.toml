@@ -34,7 +34,7 @@ dependencies = [
 llm = ["anthropic>=0.118.0"]
 dev = [
     "pytest>=9.1.1",
-    "ruff>=0.15.22",
+    "ruff>=0.16.0",
     "pyyaml>=6.0.3",
 ]
 
