@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Warden itself (CLI, engine, SARIF/JSON export, Action) is broken
+description: Something in MCPVerity itself (CLI, engine, SARIF/JSON export, Action) is broken
 labels: ["bug"]
 body:
   - type: textarea
@@ -14,7 +14,7 @@ body:
     attributes:
       label: Steps to reproduce
       placeholder: |
-        1. warden scan ./my-server --output sarif
+        1. mcpverity scan ./my-server --output sarif
         2. ...
     validations:
       required: true
@@ -29,8 +29,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Warden version
-      description: Output of `warden version`
+      label: MCPVerity version
+      description: Output of `mcpverity version`
     validations:
       required: true
 

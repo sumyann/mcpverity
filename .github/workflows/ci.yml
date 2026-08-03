@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install warden (dev extras)
+      - name: Install mcpverity (dev extras)
         run: pip install -e ".[dev]"
 
       - name: Ruff lint

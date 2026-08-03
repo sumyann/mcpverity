@@ -1,4 +1,4 @@
-"""Warden benchmark runner.
+"""MCPVerity benchmark runner.
 
 Loads benchmark/labels.yaml, runs the engine directly against the pinned
 fixtures under benchmark/servers/<slug>/files/, and computes per-rule
@@ -20,7 +20,7 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from warden.engine import run_scan  # noqa: E402
+from mcpverity.engine import run_scan  # noqa: E402
 
 HI_CONF = 0.6
 

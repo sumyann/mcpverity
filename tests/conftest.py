@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from warden.engine import run_scan
+from mcpverity.engine import run_scan
 
 
 @pytest.fixture

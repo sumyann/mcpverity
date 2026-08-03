@@ -38,7 +38,7 @@ def scan_to_sarif(scan: Scan) -> dict[str, Any]:
         "runs": [{
             "tool": {
                 "driver": {
-                    "name": "Warden",
+                    "name": "MCPVerity",
                     "version": __version__,
                     "informationUri": REPO_URL,
                     "rules": list(rules_seen.values()),

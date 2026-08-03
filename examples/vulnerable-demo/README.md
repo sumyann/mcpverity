@@ -1,7 +1,7 @@
 # vulnerable-demo
 
 This directory is **intentionally vulnerable**. Every file in it exists to
-demonstrate Warden's detection rules and is used by the test suite and the
+demonstrate MCPVerity's detection rules and is used by the test suite and the
 30-second quickstart in the top-level README.
 
 The API keys, tokens, `shell=True` calls, poisoned tool descriptions, and
@@ -15,7 +15,7 @@ directory for that reason).
 Run it:
 
 ```bash
-warden scan examples/vulnerable-demo
+mcpverity scan examples/vulnerable-demo
 ```
 
 Expect findings across W001 (tool poisoning), W002 (untrusted content into

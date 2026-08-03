@@ -1,4 +1,4 @@
-name: "Warden MCP Scan"
+name: "MCPVerity MCP Scan"
 description: "Static security scan for MCP (Model Context Protocol) servers -- tool poisoning, prompt injection, leaked credentials, over-broad permissions."
 branding:
   icon: "shield"
@@ -16,7 +16,7 @@ inputs:
   sarif-output:
     description: "Path to write a SARIF file, for upload via github/codeql-action/upload-sarif."
     required: false
-    default: "warden-results.sarif"
+    default: "mcpverity-results.sarif"
   server-name:
     description: "Label for this scan (shown in output)."
     required: false
@@ -35,15 +35,15 @@ runs:
       with:
         python-version: "3.12"
 
-    - name: Install warden
+    - name: Install mcpverity
       shell: bash
-      run: pip install warden-mcp
+      run: pip install mcpverity
 
     - name: Write SARIF report
       id: scan
       shell: bash
       run: |
-        warden scan "${{ inputs.path }}" \
+        mcpverity scan "${{ inputs.path }}" \
           --name "${{ inputs.server-name }}" \
           --output sarif \
           --output-file "${{ inputs.sarif-output }}" \
@@ -52,4 +52,4 @@ runs:
 
     - name: Print human-readable summary and enforce fail-on threshold
       shell: bash
-      run: warden scan "${{ inputs.path }}" --name "${{ inputs.server-name }}" --fail-on "${{ inputs.fail-on }}"
+      run: mcpverity scan "${{ inputs.path }}" --name "${{ inputs.server-name }}" --fail-on "${{ inputs.fail-on }}"

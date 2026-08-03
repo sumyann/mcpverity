@@ -3,7 +3,7 @@
 Used to key suppressions (a user's "this is a false positive, stop showing it
 to me" decision) across repeated scans of the same server. Pulled out as its
 own tiny module — no other engine code depends on it — so that anything
-consuming Warden as a library (e.g. a hosted UI with persisted suppressions)
+consuming MCPVerity as a library (e.g. a hosted UI with persisted suppressions)
 can import the exact same hash function the engine itself uses internally,
 with zero risk of the two drifting apart.
 """

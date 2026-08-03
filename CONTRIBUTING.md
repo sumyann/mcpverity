@@ -1,10 +1,10 @@
-# Contributing to Warden
+# Contributing to MCPVerity
 
 ## Setup
 
 ```bash
-git clone https://github.com/sumyann/warden.git
-cd warden
+git clone https://github.com/sumyann/mcpverity.git
+cd mcpverity
 pip install -e ".[dev]"
 pytest -q
 ruff check .
@@ -38,19 +38,19 @@ See [docs/rule-authoring.md](./docs/rule-authoring.md). Short version: new
 built-in rules need TP + TN fixtures, a confidence score, a benchmark check,
 and we will push back on anything that isn't precise -- see that doc's "we
 reject noisy rules" section. If you want a higher-recall/lower-precision
-detector, publish it as a plugin via the `warden.rules` entry-point group
+detector, publish it as a plugin via the `mcpverity.rules` entry-point group
 instead of proposing it as a built-in.
 
 ## Fixture / benchmark maintenance
 
 `benchmark/servers/` holds pinned snapshots (specific commit SHA + upstream
-LICENSE) of 8 real MCP server repos, used as the ground truth for Warden's
+LICENSE) of 8 real MCP server repos, used as the ground truth for MCPVerity's
 published precision/recall numbers. They're intentionally *not* re-fetched
 on every CI run -- that would make the benchmark's numbers move for reasons
 unrelated to a given PR's changes.
 
 - To re-pin a fixture to its upstream repo's current HEAD (e.g. because the
-  upstream project restructured and Warden's findings against it went
+  upstream project restructured and MCPVerity's findings against it went
   stale), run `python benchmark/refresh_fixtures.py [owner/repo]`, then
   re-run the benchmark and update `labels.yaml` if the expected findings
   changed. This is a maintainer action, not something CI does automatically.
@@ -69,7 +69,7 @@ regression test, a report is a conversation that can go stale.
 ## Code style
 
 `ruff check .` must pass. We don't currently run a formatter in CI, but
-match the surrounding file's style. Keep `warden.engine`, `warden.rules.*`,
-`warden.parsers`, and `warden.py_ast` free of `requests`/`httpx`/`urllib`
+match the surrounding file's style. Keep `mcpverity.engine`, `mcpverity.rules.*`,
+`mcpverity.parsers`, and `mcpverity.py_ast` free of `requests`/`httpx`/`urllib`
 imports at module scope -- see [docs/architecture.md](./docs/architecture.md#zero-network-by-default)
 for why.

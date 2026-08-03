@@ -1,10 +1,10 @@
-title = "warden gitleaks config"
+title = "mcpverity gitleaks config"
 
 [extend]
 useDefault = true
 
 # examples/vulnerable-demo/ is intentionally full of fake secrets used to
-# demonstrate Warden's own detection rules -- see
+# demonstrate MCPVerity's own detection rules -- see
 # examples/vulnerable-demo/README.md.
 #
 # tests/ contains intentional fake secret literals (e.g. sk-abc123...) used

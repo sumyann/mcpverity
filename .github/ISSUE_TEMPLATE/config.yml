@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/sumyann/warden/security/advisories/new
-    about: Do not open a public issue for security vulnerabilities in Warden itself -- see SECURITY.md.
+    url: https://github.com/sumyann/mcpverity/security/advisories/new
+    about: Do not open a public issue for security vulnerabilities in MCPVerity itself -- see SECURITY.md.

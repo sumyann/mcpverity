@@ -5,7 +5,7 @@ app's backend_test.py (context-gating, AST-vs-regex fallback, confidence-
 by-path deltas) against the ported engine, minus the HTTP layer -- run_scan()
 is called directly instead of going through a FastAPI test client.
 """
-from warden.rules import ALL_RULES
+from mcpverity.rules import ALL_RULES
 
 VULN_PY = '''
 import subprocess
@@ -167,7 +167,7 @@ def test_dedupe_removes_exact_duplicate_findings(scan_files):
 
 
 def test_rule_crash_becomes_info_finding_not_exception(scan_files, monkeypatch):
-    from warden import engine as engine_module
+    from mcpverity import engine as engine_module
 
     class ExplodingRule:
         id = "W099"

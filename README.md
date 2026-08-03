@@ -1,13 +1,13 @@
-# Warden
+# MCPVerity
 
-[![CI](https://github.com/sumyann/warden/actions/workflows/ci.yml/badge.svg)](https://github.com/sumyann/warden/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/sumyann/warden/actions/workflows/codeql.yml/badge.svg)](https://github.com/sumyann/warden/actions/workflows/codeql.yml)
+[![CI](https://github.com/sumyann/mcpverity/actions/workflows/ci.yml/badge.svg)](https://github.com/sumyann/mcpverity/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/sumyann/mcpverity/actions/workflows/codeql.yml/badge.svg)](https://github.com/sumyann/mcpverity/actions/workflows/codeql.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Scan your MCP server before an agent scans it.
 
-Warden is a static security scanner for [Model Context Protocol](https://modelcontextprotocol.io)
+MCPVerity is a static security scanner for [Model Context Protocol](https://modelcontextprotocol.io)
 (MCP) servers -- it catches tool poisoning, indirect prompt injection,
 leaked credentials, over-privileged tools, unpinned/unsigned dependencies,
 session-hijack surfaces, and covert auto-invoke paths, all without a network
@@ -16,33 +16,33 @@ call or an LLM in the loop.
 ## Install
 
 ```bash
-pipx install warden-mcp
-# or: pip install warden-mcp
+pipx install mcpverity
+# or: pip install mcpverity
 ```
 
 ## 30-second quickstart
 
 ```bash
-warden scan ./my-server
+mcpverity scan ./my-server
 ```
 
 ```bash
 # Scan a public GitHub repo directly
-warden scan --github https://github.com/owner/repo
+mcpverity scan --github https://github.com/owner/repo
 
 # CI-friendly: SARIF output, fail the build on high+ severity
-warden scan . --output sarif --output-file results.sarif --fail-on high
+mcpverity scan . --output sarif --output-file results.sarif --fail-on high
 
-# Try it on Warden's own intentionally-vulnerable fixture
-warden scan examples/vulnerable-demo
+# Try it on MCPVerity's own intentionally-vulnerable fixture
+mcpverity scan examples/vulnerable-demo
 ```
 
 Optional: an LLM-assisted second pass that catches subtle tool-poisoning
-phrasing regex misses. Requires `pip install "warden-mcp[llm]"` and
+phrasing regex misses. Requires `pip install "mcpverity[llm]"` and
 `ANTHROPIC_API_KEY`:
 
 ```bash
-warden scan ./my-server --llm-check
+mcpverity scan ./my-server --llm-check
 ```
 
 ## The 7 rules
@@ -62,7 +62,7 @@ Full detail on what each rule looks for and how confidence is scored:
 
 ## Benchmark
 
-Warden's precision is measured against 8 real, pinned MCP server fixtures
+MCPVerity's precision is measured against 8 real, pinned MCP server fixtures
 with hand-verified ground-truth labels -- not synthetic test cases. Run it
 yourself:
 
@@ -78,13 +78,13 @@ detection-quality issue -- see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: sumyann/warden/action@main
+- uses: sumyann/mcpverity/action@main
   with:
     fail-on: high
 - uses: github/codeql-action/upload-sarif@v3
   if: always()
   with:
-    sarif_file: warden-results.sarif
+    sarif_file: mcpverity-results.sarif
 ```
 
 See [action/README.md](action/README.md) for full inputs/outputs.
@@ -95,4 +95,4 @@ Apache 2.0 -- see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 ---
 
-Warden's scanner, rules, parsers, and benchmark are Apache 2.0 and stay that way. If you want to run it in CI, on your laptop, in your air-gapped environment — it works, forever, unlimited, free. Warden Cloud (mcpscan.narma.tech) adds fleet inventory, continuous re-scan, org policy, and SIEM export for teams. If you're a solo dev, you don't need it. If you're an AppSec team running 50+ MCP servers across a company, you probably do.
+MCPVerity's scanner, rules, parsers, and benchmark are Apache 2.0 and stay that way. If you want to run it in CI, on your laptop, in your air-gapped environment — it works, forever, unlimited, free. Warden Cloud (mcpscan.narma.tech) adds fleet inventory, continuous re-scan, org policy, and SIEM export for teams. If you're a solo dev, you don't need it. If you're an AppSec team running 50+ MCP servers across a company, you probably do.

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from warden.cli import app
+from mcpverity.cli import app
 
 runner = CliRunner()
 
@@ -10,7 +10,7 @@ runner = CliRunner()
 def test_version():
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
-    assert "warden" in result.stdout
+    assert "mcpverity" in result.stdout
 
 
 def test_rules():

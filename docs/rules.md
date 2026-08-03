@@ -1,6 +1,6 @@
 # Detection Rules
 
-Warden ships 7 built-in rules. Each scans for one class of MCP-specific risk;
+MCPVerity ships 7 built-in rules. Each scans for one class of MCP-specific risk;
 none of them require network access or an LLM call. See
 [rule-authoring.md](./rule-authoring.md) if you want to add your own.
 
@@ -26,7 +26,7 @@ falls back to regex over non-Python files.
 
 Tools that return external, untrusted content (web pages, files, email) into
 model context without a trust boundary. Only fires in files that look like
-MCP tool implementations -- see `is_mcp_file()` in `warden.rules.base`.
+MCP tool implementations -- see `is_mcp_file()` in `mcpverity.rules.base`.
 
 ## W003 Credential & Secret Exposure
 

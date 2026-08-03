@@ -18,23 +18,23 @@ action, and a hosted web app all call.
 
 ## Zero-network-by-default
 
-`warden.engine`, `warden.rules.*`, `warden.parsers`, and `warden.py_ast`
+`mcpverity.engine`, `mcpverity.rules.*`, `mcpverity.parsers`, and `mcpverity.py_ast`
 never import `requests`/`httpx`/`urllib` at module scope, and never make a
 network call. The only two modules that touch the network are:
 
-- `warden.github_fetch` -- fetches a repo tarball for `warden scan --github`.
+- `mcpverity.github_fetch` -- fetches a repo tarball for `mcpverity scan --github`.
   Only imported by `cli.py`, and only inside the `--github` code path.
-- `warden.llm_check` -- the optional Claude-assisted pass. `anthropic` is
+- `mcpverity.llm_check` -- the optional Claude-assisted pass. `anthropic` is
   imported *inside* `run_llm_check()`, not at module scope, so the package
   works fully offline (and fully unit-tests) with `anthropic` not installed
   at all. See `tests/test_llm_check_optional.py`.
 
-`pip install warden-mcp` (no extras) never contacts a network you didn't
+`pip install mcpverity` (no extras) never contacts a network you didn't
 explicitly ask it to.
 
 ## Rule SDK
 
-Every rule is a `warden.rules.base.Rule`:
+Every rule is a `mcpverity.rules.base.Rule`:
 
 ```python
 @dataclass

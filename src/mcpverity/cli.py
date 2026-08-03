@@ -1,4 +1,4 @@
-"""Warden CLI -- `warden scan`, `warden rules`, `warden version`."""
+"""MCPVerity CLI -- `mcpverity scan`, `mcpverity rules`, `mcpverity version`."""
 import asyncio
 import json as json_module
 import os
@@ -49,7 +49,7 @@ def scan(
     path: str | None = typer.Argument(None, help="Local file or directory to scan."),
     github: str | None = typer.Option(None, "--github", help="Scan a public GitHub repo URL instead of a local path."),
     server_name: str = typer.Option("Untitled MCP Server", "--name", help="Label for this scan."),
-    llm_check: bool = typer.Option(False, "--llm-check", help="Run an optional Claude-assisted second pass (requires ANTHROPIC_API_KEY and `pip install warden-mcp[llm]`)."),
+    llm_check: bool = typer.Option(False, "--llm-check", help="Run an optional Claude-assisted second pass (requires ANTHROPIC_API_KEY and `pip install mcpverity[llm]`)."),
     output: str = typer.Option("human", "--output", "-o", help="Output format: human | json | sarif."),
     output_file: str | None = typer.Option(None, "--output-file", help="Write output to a file instead of stdout (human format always prints to stdout)."),
     fail_on: str = typer.Option("high", "--fail-on", help="Exit non-zero if any finding meets or exceeds this severity: critical | high | medium | low | none."),
@@ -151,8 +151,8 @@ def rules():
 
 @app.command()
 def version():
-    """Print the warden version."""
-    console.print(f"warden {__version__}")
+    """Print the mcpverity version."""
+    console.print(f"mcpverity {__version__}")
 
 
 if __name__ == "__main__":

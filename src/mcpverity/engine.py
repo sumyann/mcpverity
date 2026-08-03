@@ -74,7 +74,7 @@ async def run_scan(
                 file_path="(engine)",
                 line=None,
                 message=f"Rule crashed: {e}",
-                remediation="Report to warden maintainers.",
+                remediation="Report to mcpverity maintainers.",
                 snippet="",
             ))
 

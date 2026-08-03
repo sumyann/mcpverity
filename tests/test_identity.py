@@ -1,4 +1,4 @@
-from warden.identity import suppression_hash
+from mcpverity.identity import suppression_hash
 
 
 def test_suppression_hash_is_stable():
