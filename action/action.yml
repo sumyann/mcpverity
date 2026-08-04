@@ -37,7 +37,9 @@ runs:
 
     - name: Install mcpverity
       shell: bash
-      run: pip install mcpverity
+      # Not yet published to PyPI -- installs from this action's own repo/ref
+      # instead. Switch back to `pip install mcpverity` once a release exists.
+      run: pip install "git+https://github.com/${{ github.action_repository }}@${{ github.action_ref }}"
 
     - name: Write SARIF report
       id: scan

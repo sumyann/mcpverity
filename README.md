@@ -15,10 +15,14 @@ call or an LLM in the loop.
 
 ## Install
 
+Not yet published to PyPI -- install from source for now:
+
 ```bash
-pipx install mcpverity
-# or: pip install mcpverity
+pipx install git+https://github.com/sumyann/mcpverity
+# or: pip install git+https://github.com/sumyann/mcpverity
 ```
+
+Once a release lands on PyPI, this becomes `pipx install mcpverity` / `pip install mcpverity`.
 
 ## 30-second quickstart
 
