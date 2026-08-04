@@ -1,0 +1,11 @@
+schema_version: 1
+stages:
+  - id: lint
+    command: ruff check .
+    speed: fast
+  - id: typecheck
+    command: mypy src
+    speed: medium
+  - id: tests
+    command: python -m pytest
+    speed: medium

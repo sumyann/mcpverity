@@ -1,0 +1,19 @@
+schema_version: 1
+tooling:
+  required:
+  - git
+  - python
+  recommended:
+  - gh
+  - rg
+  - jq
+  - yq
+  - uv
+  - gitleaks
+  optional:
+  - fd
+  - ast-grep
+  - difft
+  - semgrep
+  - trivy
+  - act

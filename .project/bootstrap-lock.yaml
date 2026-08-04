@@ -1,0 +1,31 @@
+schema_version: 1
+generator: sumyann/agent-project-bootstrap
+generator_version: 0.3.1
+profile: python-service
+managed_files:
+  .github/copilot-instructions.md:
+    sha256: f65a6f775d119c0087247a132e4b16df55e67eb834fc85c154d06b205b377864
+  .github/workflows/publish-progress.yml:
+    sha256: 034ade25ab86c3791413c05d2435b83182a5adb31d5440c067d1c6f50861e8ad
+  .project/commands.yaml:
+    sha256: 612bece7eab834bc58d5f0f51d952397b0381eeb32e3636d55c26ccc7daf332e
+  .project/guardrails.yaml:
+    sha256: e3a2baa831bc4a2a03aa460022121d43c0bba096748b6f0bffdc5efcc93732d5
+  .project/manifest.yaml:
+    sha256: 9b7beed31d11139203f83e7cf4ef46997bf6239c47c2d609e601c41192a9cead
+  .project/progress.yaml:
+    sha256: e1ee8c7bb699ee0c2da4c2b9ab17103b0d1672594ca4b562327a939323c0b657
+  .project/tooling.yaml:
+    sha256: 96af76739fa554eece2c84a6c977978b7d1ad1ae64c18eac0831740d8a653e03
+  .project/validation.yaml:
+    sha256: ad2efbcf2ea7d1af5dfffa5465dc18c784c7ecb1e5228633636859f39fa6d1e9
+  AGENTS.md:
+    sha256: 7e598379c53c7c7a8c55a6653aa5f5820fdfffda0d09a715eee7292aee0a1e48
+  ARCHITECTURE.md:
+    sha256: 148807273c226bd0fe9b94c1710f9a3dcb76ef34bafacbac6393c9761cbac407
+  CLAUDE.md:
+    sha256: 616665b50137c3a16c01091c54afda2734a51cd50aa899cff8bbffc492341a3b
+  GEMINI.md:
+    sha256: ce5e7909a41d6cc21268fda3d73146a060fa65ed43d57f3e3427927eb0ddacf4
+  scripts/verify-agent-harness.py:
+    sha256: 20cf0efdfa035ff80cbd9b65fd7644f1fa002a955be3b9f68d98972b71a57afb

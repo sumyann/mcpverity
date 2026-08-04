@@ -1,0 +1,19 @@
+schema_version: 2
+commands:
+  install:
+    command: "python -m pip install -e '.[dev]'"
+    safe_for_agent: true
+  test:
+    command: "python -m pytest"
+    safe_for_agent: true
+  validate:
+    command: "python -m pytest"
+    safe_for_agent: true
+  verify_harness:
+    command: "python scripts/verify-agent-harness.py"
+    safe_for_agent: true
+  deploy:
+    command: null
+    safe_for_agent: false
+    approval_required: true
+validation_order: [lint, typecheck, tests]
