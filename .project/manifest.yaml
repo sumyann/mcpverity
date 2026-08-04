@@ -1,0 +1,14 @@
+schema_version: 2
+project:
+  id: mcpverity
+  name: Mcpverity
+  profile: python-service
+runtime:
+  language: python
+bootstrap:
+  generator: sumyann/agent-project-bootstrap
+  version: 0.3.1
+  lock_file: .project/bootstrap-lock.yaml
+progress:
+  file: .project/progress.yaml
+  publisher: null
