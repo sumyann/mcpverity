@@ -2,26 +2,26 @@
 
 ## Built-in rules
 
-Built-ins live in `src/warden/rules/w0NN_*.py` and are registered explicitly
-in `src/warden/rules/__init__.py`'s `BUILTIN_RULES` list. We don't discover
+Built-ins live in `src/mcpverity/rules/w0NN_*.py` and are registered explicitly
+in `src/mcpverity/rules/__init__.py`'s `BUILTIN_RULES` list. We don't discover
 built-ins by filesystem globbing -- an explicit list means scan behavior
 never silently changes because a new file appeared on disk.
 
 ## Third-party plugin rules
 
-You don't need to fork Warden to add a rule. Publish your own package with
-an entry-point in the `warden.rules` group:
+You don't need to fork MCPVerity to add a rule. Publish your own package with
+an entry-point in the `mcpverity.rules` group:
 
 ```toml
 # your_package/pyproject.toml
-[project.entry-points."warden.rules"]
+[project.entry-points."mcpverity.rules"]
 my_rule = "your_package.rules:RULE"
 ```
 
 ```python
 # your_package/rules.py
-from warden.rules.base import Rule, ParsedServer
-from warden.models import Finding
+from mcpverity.rules.base import Rule, ParsedServer
+from mcpverity.models import Finding
 
 def _check(parsed: ParsedServer):
     for f in parsed.files:
@@ -44,8 +44,8 @@ RULE = Rule(
 )
 ```
 
-Anyone with your package installed alongside `warden-mcp` gets your rule
-picked up automatically by `warden.rules.all_rules()` (the CLI uses this,
+Anyone with your package installed alongside `mcpverity` gets your rule
+picked up automatically by `mcpverity.rules.all_rules()` (the CLI uses this,
 not the `BUILTIN_RULES`-only list). A broken plugin rule can never crash a
 scan -- `all_rules()` swallows exceptions raised while loading a plugin, and
 `engine.run_scan()` swallows exceptions raised while a rule's `.check()` is

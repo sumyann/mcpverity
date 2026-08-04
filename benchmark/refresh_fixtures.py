@@ -27,7 +27,7 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from warden.github_fetch import ALLOWED_EXT, LOCKFILE_NAMES, MAX_FILE_BYTES, MAX_TOTAL_FILES  # noqa: E402
+from mcpverity.github_fetch import ALLOWED_EXT, LOCKFILE_NAMES, MAX_FILE_BYTES, MAX_TOTAL_FILES  # noqa: E402
 
 PERMISSIVE_LICENSE_MARKERS = (
     "mit license", "apache license", "bsd license", "the mit license",
@@ -118,8 +118,8 @@ def refresh_one(server_name: str, repo_url: str) -> None:
             f"- Commit: {sha}\n"
             f"- Pinned: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}\n\n"
             f"Redistributed here under the upstream license (see LICENSE in this "
-            f"directory) solely as a fixed benchmark fixture for the Warden scanner's "
-            f"precision/recall benchmark. Only files matching Warden's scan allowlist "
+            f"directory) solely as a fixed benchmark fixture for the MCPVerity scanner's "
+            f"precision/recall benchmark. Only files matching MCPVerity's scan allowlist "
             f"({', '.join(sorted(ALLOWED_EXT))}) plus lockfiles are included; binary and "
             f"unrelated assets were dropped. This is not a full mirror of the project.\n"
         )

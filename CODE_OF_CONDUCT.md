@@ -49,7 +49,7 @@ representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported via [GitHub Security Advisories](https://github.com/sumyann/warden/security/advisories/new)
+reported via [GitHub Security Advisories](https://github.com/sumyann/mcpverity/security/advisories/new)
 (private) or by opening an issue if the report doesn't need to be
 confidential. All complaints will be reviewed and investigated promptly
 and fairly.

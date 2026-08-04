@@ -2,7 +2,7 @@
 
 Every rule in this package is a pure function of (files, manifests) -> list
 of Findings — no I/O, no network, no persistence. That's a deliberate
-invariant: `pip install warden-mcp` plus `warden scan ./some-dir` must never
+invariant: `pip install mcpverity` plus `mcpverity scan ./some-dir` must never
 make a network call. See docs/architecture.md.
 """
 import re
@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from ..models import Finding
 
-REPO_URL = "https://github.com/sumyann/warden"
+REPO_URL = "https://github.com/sumyann/mcpverity"
 DOCS_BASE = f"{REPO_URL}/blob/main/docs/rules.md"
 
 
@@ -24,7 +24,7 @@ class ParsedServer:
     """The parsed input a rule inspects: code files + MCP manifests.
 
     `files` is a list of {"path": str, "content": str}.
-    `manifests` is a list of manifest dicts (see warden.parsers for shape).
+    `manifests` is a list of manifest dicts (see mcpverity.parsers for shape).
     """
     files: list[dict]
     manifests: list[dict]

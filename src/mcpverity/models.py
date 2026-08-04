@@ -1,4 +1,4 @@
-"""Warden — MCP Security Scanner data models.
+"""MCPVerity — MCP Security Scanner data models.
 
 This schema is the contract between the scan engine and anything that
 consumes its output (the CLI's JSON/SARIF export, a hosted UI, CI tooling).

@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "warden-mcp"
+name = "mcpverity"
 version = "0.1.0"
 description = "Static security scanner for MCP (Model Context Protocol) servers — catches tool poisoning, prompt injection, leaked credentials, and over-broad permissions before an agent is wired to them."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.10"
-authors = [{ name = "Warden Maintainers" }]
+authors = [{ name = "MCPVerity Maintainers" }]
 keywords = ["mcp", "model-context-protocol", "security", "sast", "sarif", "llm", "agent-security"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -39,16 +39,16 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sumyann/warden"
-Repository = "https://github.com/sumyann/warden"
-Issues = "https://github.com/sumyann/warden/issues"
-Documentation = "https://github.com/sumyann/warden/blob/main/docs/rules.md"
+Homepage = "https://github.com/sumyann/mcpverity"
+Repository = "https://github.com/sumyann/mcpverity"
+Issues = "https://github.com/sumyann/mcpverity/issues"
+Documentation = "https://github.com/sumyann/mcpverity/blob/main/docs/rules.md"
 
 [project.scripts]
-warden = "warden.cli:app"
+mcpverity = "mcpverity.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/warden"]
+packages = ["src/mcpverity"]
 
 [tool.ruff]
 line-length = 220

@@ -1,6 +1,6 @@
 """Fetch a public GitHub repo tarball and extract relevant files.
 
-This is the one module in warden's core that talks to the network. It is
+This is the one module in mcpverity's core that talks to the network. It is
 never imported by `engine.py`, `rules/`, or `parsers.py` at module scope --
 only `cli.py` imports it, and only inside the `--github` code path. Nothing
 here runs unless a user explicitly asks to scan a remote repo.

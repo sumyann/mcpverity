@@ -1,4 +1,4 @@
-"""Warden — static security scanner for MCP (Model Context Protocol) servers."""
+"""MCPVerity — static security scanner for MCP (Model Context Protocol) servers."""
 
 __version__ = "0.1.0"
 

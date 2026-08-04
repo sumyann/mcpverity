@@ -1,4 +1,4 @@
-# Warden benchmark — ground truth labels for 8 real, pinned MCP server fixtures.
+# MCPVerity benchmark — ground truth labels for 8 real, pinned MCP server fixtures.
 #
 # Each server lists two things:
 #   expected: things the scanner MUST find. Each `contains` is a substring

@@ -1,6 +1,6 @@
 import pytest
 
-from warden.github_fetch import GitHubFetchError, parse_repo_url
+from mcpverity.github_fetch import GitHubFetchError, parse_repo_url
 
 
 def test_parse_repo_url_basic():
