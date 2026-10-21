@@ -17,7 +17,8 @@ from .rules import ALL_RULES
 app = typer.Typer(add_completion=False, no_args_is_help=True, help="Static security scanner for MCP servers.")
 console = Console()
 # Warnings go to stderr so they never corrupt `-o json|sarif` written to stdout.
-err_console = Console(stderr=True)
+# soft_wrap: never hard-wrap them at terminal width -- CI logs get grepped.
+err_console = Console(stderr=True, soft_wrap=True)
 
 SCAN_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".jsx", ".json", ".toml", ".yaml", ".yml", ".txt", ".md"}
 MAX_FILE_BYTES = 200_000
