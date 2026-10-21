@@ -88,13 +88,16 @@ POISONING_RE = re.compile("|".join(f"({p})" for p in POISONING_PHRASES), re.IGNO
 # Model-visible description literals in non-AST files:
 #   description = "..."             (Python kwargs / assignments)
 #   description: "..." / "description": "..."   (JS/TS object literals)
+# String bodies consume escape pairs (`\\`, `\"`) as units, so a literal
+# ending in an escaped backslash closes at its own quote instead of
+# swallowing the next description.
 DESCRIPTION_LITERAL_RE = re.compile(
-    r"(?:description|prompt|instructions)['\"]?\s*[:=]\s*(['\"`])(.+?)(?<!\\)\1",
+    r"(?:description|prompt|instructions)['\"]?\s*[:=]\s*(['\"`])((?:\\.|(?!\1)[^\\])*)\1",
     re.IGNORECASE | re.DOTALL,
 )
 # TS/JS SDK positional form: server.tool("name", "description", ...)
 TOOL_POSITIONAL_DESC_RE = re.compile(
-    r"\.(?:tool|prompt)\(\s*(['\"`])[^'\"`]*\1\s*,\s*(['\"`])(.+?)(?<!\\)\2",
+    r"\.(?:tool|prompt)\(\s*(['\"`])[^'\"`]*\1\s*,\s*(['\"`])((?:\\.|(?!\2)[^\\])*)\2",
     re.DOTALL,
 )
 

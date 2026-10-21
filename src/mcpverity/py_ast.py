@@ -58,6 +58,16 @@ def _is_tool_decorator(node) -> bool:
     return bool(qn) and qn.rsplit(".", 1)[-1] in TOOL_DECORATOR_NAMES
 
 
+def _overrides_description(node) -> bool:
+    """True when a decorator call sets description= to anything but None."""
+    if not isinstance(node, ast.Call):
+        return False
+    return any(
+        kw.arg == "description" and not (isinstance(kw.value, ast.Constant) and kw.value.value is None)
+        for kw in node.keywords
+    )
+
+
 class _Visitor(ast.NodeVisitor):
     def __init__(self, file_path: str, source: str):
         self.file_path = file_path
@@ -94,8 +104,10 @@ class _Visitor(ast.NodeVisitor):
 
     def _visit_function(self, node):
         # FastMCP / @server.tool: the function docstring *is* the tool
-        # description the model sees, so it gets the same check.
-        if any(_is_tool_decorator(d) for d in node.decorator_list):
+        # description the model sees, so it gets the same check -- unless the
+        # decorator passes its own description=, which replaces the docstring.
+        tool_decorators = [d for d in node.decorator_list if _is_tool_decorator(d)]
+        if tool_decorators and not any(_overrides_description(d) for d in tool_decorators):
             doc = ast.get_docstring(node, clean=False)
             if doc:
                 self._check_desc_string(doc, self._line(node.body[0]))
