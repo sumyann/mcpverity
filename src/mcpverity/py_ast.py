@@ -1,8 +1,10 @@
 """AST-based Python analysis for W001 (tool poisoning) and W004 (over-privileged).
 
 AST walks skip strings inside comments (Python has none) and docstrings
-(unless assigned to a variable), which eliminates the "matched inside a
-comment" false-positive class that plain regex hits. When the file doesn't
+(unless assigned to a variable, or the docstring of an @tool/@prompt/
+@resource-decorated function, which FastMCP exposes as the tool
+description), which eliminates the "matched inside a comment"
+false-positive class that plain regex hits. When the file doesn't
 parse (syntax error, Python 2, etc.), we return None so the caller falls
 back to regex.
 """
@@ -46,6 +48,16 @@ def _qname(node) -> str | None:
     return None
 
 
+TOOL_DECORATOR_NAMES = {"tool", "prompt", "resource"}
+
+
+def _is_tool_decorator(node) -> bool:
+    """True for @tool, @mcp.tool, @mcp.tool(), @server.prompt(...), etc."""
+    target = node.func if isinstance(node, ast.Call) else node
+    qn = _qname(target)
+    return bool(qn) and qn.rsplit(".", 1)[-1] in TOOL_DECORATOR_NAMES
+
+
 class _Visitor(ast.NodeVisitor):
     def __init__(self, file_path: str, source: str):
         self.file_path = file_path
@@ -79,6 +91,27 @@ class _Visitor(ast.NodeVisitor):
             tags=["poisoning", "ast"],
             confidence=confidence(0.95, self.file_path),
         ))
+
+    def _visit_function(self, node):
+        # FastMCP / @server.tool: the function docstring *is* the tool
+        # description the model sees, so it gets the same check.
+        if any(_is_tool_decorator(d) for d in node.decorator_list):
+            doc = ast.get_docstring(node, clean=False)
+            if doc:
+                self._check_desc_string(doc, self._line(node.body[0]))
+        self.generic_visit(node)
+
+    visit_FunctionDef = _visit_function
+    visit_AsyncFunctionDef = _visit_function
+
+    def visit_Dict(self, node: ast.Dict):
+        # {"description": "..."} -- e.g. tool schemas returned from list_tools.
+        for k, v in zip(node.keys, node.values, strict=True):
+            if isinstance(k, ast.Constant) and isinstance(k.value, str) \
+                    and k.value.lower() in {"description", "prompt", "instructions"} \
+                    and isinstance(v, ast.Constant) and isinstance(v.value, str):
+                self._check_desc_string(v.value, self._line(v))
+        self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign):
         # description = "..." / prompt = "..." / instructions = "..."

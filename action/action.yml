@@ -37,19 +37,31 @@ runs:
 
     - name: Install mcpverity
       shell: bash
-      run: pip install mcpverity
+      # Install from this action's own checkout so the scanner always matches
+      # the action ref you pinned in `uses:` (no PyPI release required).
+      run: pip install "${GITHUB_ACTION_PATH}/.."
 
     - name: Write SARIF report
       id: scan
       shell: bash
+      # Inputs are passed via env, never spliced into the script with ${{ }},
+      # so a path or name containing shell metacharacters cannot inject commands.
+      env:
+        SCAN_PATH: ${{ inputs.path }}
+        SERVER_NAME: ${{ inputs.server-name }}
+        SARIF_OUTPUT: ${{ inputs.sarif-output }}
       run: |
-        mcpverity scan "${{ inputs.path }}" \
-          --name "${{ inputs.server-name }}" \
+        mcpverity scan "$SCAN_PATH" \
+          --name "$SERVER_NAME" \
           --output sarif \
-          --output-file "${{ inputs.sarif-output }}" \
+          --output-file "$SARIF_OUTPUT" \
           --fail-on none
-        echo "sarif-file=${{ inputs.sarif-output }}" >> "$GITHUB_OUTPUT"
+        echo "sarif-file=$SARIF_OUTPUT" >> "$GITHUB_OUTPUT"
 
     - name: Print human-readable summary and enforce fail-on threshold
       shell: bash
-      run: mcpverity scan "${{ inputs.path }}" --name "${{ inputs.server-name }}" --fail-on "${{ inputs.fail-on }}"
+      env:
+        SCAN_PATH: ${{ inputs.path }}
+        SERVER_NAME: ${{ inputs.server-name }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: mcpverity scan "$SCAN_PATH" --name "$SERVER_NAME" --fail-on "$FAIL_ON"

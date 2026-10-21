@@ -16,6 +16,8 @@ from .rules import ALL_RULES
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help="Static security scanner for MCP servers.")
 console = Console()
+# Warnings go to stderr so they never corrupt `-o json|sarif` written to stdout.
+err_console = Console(stderr=True)
 
 SCAN_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".jsx", ".json", ".toml", ".yaml", ".yml", ".txt", ".md"}
 MAX_FILE_BYTES = 200_000
@@ -28,7 +30,10 @@ def _collect_local_files(root: Path) -> list[ScanInputFile]:
         candidates = [root]
         base = root.parent
     else:
-        candidates = [p for p in root.rglob("*") if p.is_file() and not any(part in SKIP_DIRS for part in p.parts)]
+        # Match SKIP_DIRS against the path *below* the scan root only -- an
+        # ancestor named build/ or dist/ must not silently skip every file.
+        candidates = [p for p in root.rglob("*")
+                      if p.is_file() and not any(part in SKIP_DIRS for part in p.relative_to(root).parts)]
         base = root
     for p in candidates:
         if p.suffix.lower() not in SCAN_EXTENSIONS:
@@ -52,7 +57,7 @@ def scan(
     llm_check: bool = typer.Option(False, "--llm-check", help="Run an optional Claude-assisted second pass (requires ANTHROPIC_API_KEY and `pip install mcpverity[llm]`)."),
     output: str = typer.Option("human", "--output", "-o", help="Output format: human | json | sarif."),
     output_file: str | None = typer.Option(None, "--output-file", help="Write output to a file instead of stdout (human format always prints to stdout)."),
-    fail_on: str = typer.Option("high", "--fail-on", help="Exit non-zero if any finding meets or exceeds this severity: critical | high | medium | low | none."),
+    fail_on: str = typer.Option("high", "--fail-on", help="Exit 1 if a finding meets this severity: critical | high | medium | low | none. Exit 2 if nothing was scanned or --llm-check did not complete."),
 ):
     """Scan a local path or a GitHub repo for MCP security issues."""
     if not path and not github:
@@ -65,6 +70,12 @@ def scan(
     if llm_check and not os.environ.get("ANTHROPIC_API_KEY"):
         console.print("[red]--llm-check requires ANTHROPIC_API_KEY to be set.[/red]")
         raise typer.Exit(2)
+    if llm_check:
+        try:
+            import anthropic  # noqa: F401
+        except ImportError:
+            console.print("[red]--llm-check requires the `anthropic` package: pip install 'mcpverity[llm]'.[/red]")
+            raise typer.Exit(2) from None
 
     if github:
         from .github_fetch import GitHubFetchError, fetch_repo_files
@@ -86,8 +97,9 @@ def scan(
         repo_url = None
 
     if not files:
-        console.print("[yellow]No scannable files found.[/yellow]")
-        raise typer.Exit(0)
+        # Scanning nothing must not look like a clean pass in CI.
+        err_console.print(f"[red]No scannable files found under {path or github} -- nothing was scanned.[/red]")
+        raise typer.Exit(0 if fail_on.lower() == "none" else 2)
 
     scan_result = asyncio.run(run_scan(server_name, files, mode, repo_url, llm_check))
 
@@ -103,7 +115,12 @@ def scan(
         console.print(f"[red]Unknown --output '{output}'. Use human, json, or sarif.[/red]")
         raise typer.Exit(2)
 
-    raise typer.Exit(_exit_code(scan_result, fail_on))
+    code = _exit_code(scan_result, fail_on)
+    if scan_result.error:
+        err_console.print(f"[red]Scan incomplete: {scan_result.error}[/red]")
+        if fail_on.lower() != "none":
+            code = 2
+    raise typer.Exit(code)
 
 
 def _write_output(text: str, output_file: str | None) -> None:

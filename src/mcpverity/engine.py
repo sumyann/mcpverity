@@ -2,10 +2,11 @@
 import time
 
 from .identity import suppression_hash
-from .llm_check import run_llm_check
+from .llm_check import run_llm_check_detailed
 from .models import SEVERITY_ORDER, Finding, Scan, ScanSummary
 from .parsers import extract_tool_descriptions, parse_files
 from .rules import ALL_RULES, ParsedServer
+from .rules.base import redact_secrets
 
 SEVERITY_WEIGHT = {"CRITICAL": 25, "HIGH": 12, "MEDIUM": 5, "LOW": 2, "INFO": 0}
 
@@ -79,11 +80,21 @@ async def run_scan(
             ))
 
     llm_count = 0
+    error = None
     if enable_llm_check:
         tds = extract_tool_descriptions(ctx)
-        llm_findings = await run_llm_check(tds, server_name)
-        llm_count = len(llm_findings)
-        findings.extend(llm_findings)
+        llm = await run_llm_check_detailed(tds)
+        llm_count = len(llm.findings)
+        findings.extend(llm.findings)
+        if llm.errors:
+            error = (f"LLM check failed for {len(llm.errors)} of {max(llm.attempted, 1)} "
+                     f"tool description(s): {'; '.join(llm.errors[:3])}")
+
+    # Rules quote surrounding source in snippets; never let a secret ride
+    # along into terminal / JSON / SARIF output.
+    for f in findings:
+        f.snippet = redact_secrets(f.snippet)
+        f.message = redact_secrets(f.message)
 
     findings = _dedupe(findings)
 
@@ -113,5 +124,6 @@ async def run_scan(
         llm_findings_count=llm_count,
         duration_ms=int((time.time() - started) * 1000),
         status="completed",
+        error=error,
     )
     return scan
