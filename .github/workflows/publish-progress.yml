@@ -11,7 +11,7 @@ jobs:
   validate-progress:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify agent harness
         run: python scripts/verify-agent-harness.py
       - name: Optional progress integration
