@@ -5,6 +5,8 @@ from collections.abc import Iterable
 from ..models import Finding
 from .base import DOCS_BASE, SECRET_PATTERNS, ParsedServer, Rule, confidence, find_line, redact_secret, redact_secrets, snippet
 
+BASE_CONFIDENCE = {"Generic secret assignment": 0.65, "JWT": 0.75}
+
 
 def _check(parsed: ParsedServer) -> Iterable[Finding]:
     for f in parsed.files:
@@ -12,8 +14,8 @@ def _check(parsed: ParsedServer) -> Iterable[Finding]:
             for m in pat.finditer(f["content"]):
                 line = find_line(f["content"], m.start())
                 secret = m.group(0)
-                # Generic-secret regex is the noisy one -- lower base.
-                base = 0.65 if label == "Generic secret assignment" else 0.95
+                # Generic assignments and JWTs (often sample/expired tokens) are the noisy ones.
+                base = BASE_CONFIDENCE.get(label, 0.95)
                 # Common false positives: obvious placeholders like `xxx`, `changeme`, `example`.
                 if re.search(r"(?i)(xxx|changeme|example|dummy|placeholder|<[A-Z_]+>)", secret):
                     base -= 0.35

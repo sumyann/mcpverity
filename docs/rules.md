@@ -39,7 +39,12 @@ MCP tool implementations -- see `is_mcp_file()` in `mcpverity.rules.base`.
 
 API keys, tokens, or secrets hardcoded in server source or config, or leaking
 into model-visible context. Matches common key formats (`sk-`, `sk-ant-`,
-`AKIA`, `gh[pousr]_`, `AIza`, `xox[baprs]-`, generic high-entropy assignment).
+`sk-proj-`/`sk-svcacct-`/`sk-admin-`, `AKIA`, `gh[pousr]_`, `github_pat_`,
+`AIza`, `xox[baprs]-`, Slack webhook URLs, `sk_live_`/`rk_live_`, `hf_`,
+PEM private key blocks, JWTs, database URLs with an inline password, generic
+high-entropy assignment). Database URLs with a templated (`${X}`, `{x}`,
+`<x>`, `%s`) or stock placeholder password (`password`, `changeme`, ...) are
+not flagged; JWTs and generic assignments start at lower confidence.
 Reading a secret from an environment variable or secret manager does not fire
 this rule -- only literal hardcoded values do.
 

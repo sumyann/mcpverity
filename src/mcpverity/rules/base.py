@@ -60,6 +60,23 @@ SECRET_PATTERNS = [
     ("Google API key", re.compile(r"AIza[0-9A-Za-z\-_]{30,}")),
     ("Slack token", re.compile(r"xox[baprs]-[A-Za-z0-9\-]{10,}")),
     ("Bearer token literal", re.compile(r"(?i)bearer\s+[A-Za-z0-9\-_.]{20,}")),
+    ("OpenAI project/service key", re.compile(r"sk-(?:proj|svcacct|admin)-[A-Za-z0-9_\-]{20,}")),
+    ("GitHub fine-grained token", re.compile(r"github_pat_[A-Za-z0-9_]{22,}")),
+    ("Stripe live key", re.compile(r"\b[sr]k_live_[A-Za-z0-9]{20,}")),
+    ("Hugging Face token", re.compile(r"\bhf_[A-Za-z0-9]{30,}")),
+    ("Slack webhook URL", re.compile(r"https://hooks\.slack\.com/services/T[A-Za-z0-9]+/B[A-Za-z0-9]+/[A-Za-z0-9]{20,}")),
+    # Needs a key body after the header, so code that merely *checks* for a
+    # PEM header isn't flagged. An unterminated block (e.g. a snippet cut
+    # mid-key) runs to the end of the text so redaction covers the body too.
+    ("Private key block", re.compile(
+        r"-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----(?:\\n|\s)+[A-Za-z0-9+/=]{20,}"
+        r"(?:[\s\S]*?-----END (?:[A-Z]+ )*PRIVATE KEY-----|[\s\S]*)")),
+    ("JWT", re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}")),
+    # scheme://user:password@ -- skips templated (${X}, {x}, <x>, %s) and
+    # stock placeholder passwords.
+    ("Database URL with password", re.compile(
+        r"\b(?:postgres(?:ql)?|mysql|mariadb|mssql|mongodb(?:\+srv)?|rediss?|amqps?)://[^\s:/@'\"]+:"
+        r"(?!(?:password|passwd|pass|pwd|secret|changeme|example|x+|\*+)@)[^\s@/'\"${}<>%]{3,}@")),
     ("Generic secret assignment", re.compile(r"(?i)(api[_-]?key|secret|password|token)\s*[:=]\s*['\"][A-Za-z0-9\-_./+=]{16,}['\"]")),
 ]
 
