@@ -1,6 +1,6 @@
 schema_version: 1
 project_id: mcpverity
-updated_at: 2026-10-21
+updated_at: 2026-10-22
 current_milestone: null
 completed:
   - "E2E review fixes: W001 detects FastMCP tool docstrings, dict literals, and TS/JS descriptions"
@@ -9,12 +9,14 @@ completed:
   - "E2E review fixes: no fail-open on ancestor dirs named build/dist/venv; empty scan exits 2"
   - "E2E review fixes: GitHub Action installs from its own checkout; inputs passed via env"
   - "E2E review fixes: --llm-check failures recorded in Scan.error and exit 2"
+  - "Plugin rules run in every scan and are listed by `mcpverity rules`; load failures become PLUGIN-ERR findings + stderr warning"
+  - "File selection shared by local and GitHub scans (file_filter.py): .mjs/.cjs/.mts/.cts and .env* scanned; lockfiles kept as markers at any size"
+  - "Oversize/unreadable files and the GitHub 200-file cap are reported on stderr instead of dropped silently"
 in_progress: []
 blocked: []
 next:
-  - "Plugin rules: engine uses BUILTIN_RULES, not all_rules(), contrary to docs/rule-authoring.md"
   - "W004: alias imports (import subprocess as sp, from subprocess import run) evade AST; regex-only signals lost for parsed .py"
-  - "File collection: .env and *.lock not scanned; package-lock.json >200KB dropped; sk-proj and DSN credentials undetected"
+  - "Secret patterns: sk-proj and DSN credentials undetected"
   - "False positives: JS RegExp.exec as eval, 'all' substring in permissions, engines field, README scanned as code, streamable-http always HIGH"
   - "github_fetch: .git stripped mid-name, slash branches truncated, unbounded download"
   - "Benchmark precision counts only labelled findings (9 of 150); notes text overstates"

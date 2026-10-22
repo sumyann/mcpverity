@@ -39,6 +39,13 @@ mcpverity scan . --output sarif --output-file results.sarif --fail-on high
 mcpverity scan examples/vulnerable-demo
 ```
 
+What gets read: Python, JS/TS (including `.mjs`/`.cjs`/`.mts`/`.cts`), JSON,
+TOML, YAML, Markdown/text, and committed `.env*` files, skipping
+`node_modules/`, `dist/`, `build/`, virtualenvs and caches. Lockfiles count
+toward provenance checks at any size. Source files over 200 KB are skipped,
+and `--github` scans stop at 200 files; either is reported on stderr, never
+dropped silently.
+
 Optional: an LLM-assisted second pass that catches subtle tool-poisoning
 phrasing regex misses. Requires the `llm` extra
 (`pip install "mcpverity[llm] @ git+https://github.com/sumyann/mcpverity"`) and
