@@ -1,6 +1,6 @@
 schema_version: 1
 project_id: mcpverity
-updated_at: 2026-10-21
+updated_at: 2026-10-22
 current_milestone: null
 completed:
   - "E2E review fixes: W001 detects FastMCP tool docstrings, dict literals, and TS/JS descriptions"
@@ -9,11 +9,11 @@ completed:
   - "E2E review fixes: no fail-open on ancestor dirs named build/dist/venv; empty scan exits 2"
   - "E2E review fixes: GitHub Action installs from its own checkout; inputs passed via env"
   - "E2E review fixes: --llm-check failures recorded in Scan.error and exit 2"
+  - "W004: AST resolves import aliases, from-imports, star imports, getattr/__import__/importlib indirection; adds spawn/exec/pty/asyncio shell calls, sensitive-path open() and chmod 0o777"
 in_progress: []
 blocked: []
 next:
   - "Plugin rules: engine uses BUILTIN_RULES, not all_rules(), contrary to docs/rule-authoring.md"
-  - "W004: alias imports (import subprocess as sp, from subprocess import run) evade AST; regex-only signals lost for parsed .py"
   - "File collection: .env and *.lock not scanned; package-lock.json >200KB dropped; sk-proj and DSN credentials undetected"
   - "False positives: JS RegExp.exec as eval, 'all' substring in permissions, engines field, README scanned as code, streamable-http always HIGH"
   - "github_fetch: .git stripped mid-name, slash branches truncated, unbounded download"

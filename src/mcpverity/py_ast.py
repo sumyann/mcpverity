@@ -28,7 +28,22 @@ DANGEROUS_CALLS = {
     "eval": ("dynamic code evaluation", 0.9),
     "exec": ("dynamic code evaluation", 0.9),
     "shutil.rmtree": ("recursive filesystem delete", 0.85),
+    "subprocess.getoutput": ("invokes shell", 0.95),
+    "subprocess.getstatusoutput": ("invokes shell", 0.95),
+    "asyncio.create_subprocess_shell": ("invokes shell", 0.95),
+    "asyncio.subprocess.create_subprocess_shell": ("invokes shell", 0.95),
+    "asyncio.create_subprocess_exec": ("spawns subprocess", 0.85),
+    "asyncio.subprocess.create_subprocess_exec": ("spawns subprocess", 0.85),
+    "pty.spawn": ("spawns subprocess", 0.85),
+    "os.posix_spawn": ("spawns subprocess", 0.85),
+    "os.posix_spawnp": ("spawns subprocess", 0.85),
+    **{f"os.exec{v}": ("invokes shell", 0.9) for v in ("l", "le", "lp", "lpe", "vpe")},
+    **{f"os.spawn{v}": ("spawns subprocess", 0.85) for v in ("l", "le", "lp", "lpe", "v", "ve", "vp", "vpe")},
 }
+# Modules whose dangerous functions a `from <module> import *` brings into scope.
+_STAR_MODULES = {qn.rsplit(".", 1)[0] for qn in DANGEROUS_CALLS if "." in qn}
+SENSITIVE_PATH_PREFIXES = ("/etc", "/root", "/home", "/var", "/usr")
+WORLD_WRITABLE = 0o777
 
 
 def _qname(node) -> str | None:
@@ -46,6 +61,37 @@ def _qname(node) -> str | None:
     if isinstance(node, ast.Name):
         return node.id
     return None
+
+
+def _collect_aliases(tree: ast.AST) -> dict[str, str]:
+    """Map local names to the dotted names they were imported as.
+
+    `import subprocess as sp` -> {"sp": "subprocess"}
+    `from os import system as s` -> {"s": "os.system"}
+    `from os import *` -> {"system": "os.system", ...} for known dangerous calls
+    Scope-insensitive on purpose: an import anywhere in the file counts.
+    """
+    aliases: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for a in node.names:
+                if a.asname:
+                    aliases[a.asname] = a.name
+        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            for a in node.names:
+                if a.name == "*":
+                    if node.module in _STAR_MODULES:
+                        for qn in DANGEROUS_CALLS:
+                            mod, _, fn = qn.rpartition(".")
+                            if mod == node.module:
+                                aliases.setdefault(fn, qn)
+                else:
+                    aliases[a.asname or a.name] = f"{node.module}.{a.name}"
+    return aliases
+
+
+def _const_str(node) -> str | None:
+    return node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) else None
 
 
 TOOL_DECORATOR_NAMES = {"tool", "prompt", "resource"}
@@ -69,10 +115,32 @@ def _overrides_description(node) -> bool:
 
 
 class _Visitor(ast.NodeVisitor):
-    def __init__(self, file_path: str, source: str):
+    def __init__(self, file_path: str, source: str, aliases: dict[str, str] | None = None):
         self.file_path = file_path
         self.source_lines = source.splitlines()
         self.findings: list[Finding] = []
+        self.aliases = aliases or {}
+
+    def _resolve(self, node) -> str | None:
+        """Dotted name a call target really refers to, through imports and indirection.
+
+        Handles `sp.run` (import alias), `run` (from-import), `getattr(os, "system")`,
+        `__import__("os").system`, `importlib.import_module("os").system`, and
+        `builtins.eval`. Returns None for anything it can't pin to a name.
+        """
+        if isinstance(node, ast.Name):
+            return self.aliases.get(node.id, node.id)
+        if isinstance(node, ast.Attribute):
+            base = self._resolve(node.value)
+            return f"{base}.{node.attr}" if base else None
+        if isinstance(node, ast.Call) and node.args:
+            fn = self._resolve(node.func)
+            if fn == "getattr" and len(node.args) >= 2:
+                base, attr = self._resolve(node.args[0]), _const_str(node.args[1])
+                return f"{base}.{attr}" if base and attr else None
+            if fn in {"__import__", "importlib.import_module"}:
+                return _const_str(node.args[0])
+        return None
 
     def _line(self, node) -> int:
         return getattr(node, "lineno", 1)
@@ -141,9 +209,12 @@ class _Visitor(ast.NodeVisitor):
                     and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
                 self._check_desc_string(kw.value.value, self._line(node))
         # W004 -- dangerous call
-        qn = _qname(node.func)
+        written = _qname(node.func)
+        qn = self._resolve(node.func)
+        if qn and qn.startswith("builtins."):
+            qn = qn[len("builtins."):]
         if qn:
-            label_conf = DANGEROUS_CALLS.get(qn)
+            label_conf = DANGEROUS_CALLS.get(qn) or self._risky_args(qn, node)
             if label_conf:
                 label, base = label_conf
                 shell_true = any(
@@ -152,6 +223,7 @@ class _Visitor(ast.NodeVisitor):
                 )
                 if shell_true and qn.startswith("subprocess."):
                     label, base = "shell=True subprocess", 0.95
+                via = f" (written as `{written or ast.unparse(node.func)}`)" if written != qn else ""
                 self.findings.append(Finding(
                     rule_id="W004",
                     title=f"Over-privileged operation: {label}",
@@ -159,7 +231,7 @@ class _Visitor(ast.NodeVisitor):
                     file_path=self.file_path,
                     line=self._line(node),
                     snippet=self._snip(node),
-                    message=(f"AST walk identified `{qn}(...)` — {label}. This grants "
+                    message=(f"AST walk identified `{qn}(...)`{via} — {label}. This grants "
                              f"scope well beyond a typical MCP tool's stated function."),
                     remediation="Constrain the operation: whitelist commands, avoid shell=True, sandbox filesystem access.",
                     doc_link=f"{DOCS_BASE}#w004-over-privileged-tools",
@@ -168,6 +240,19 @@ class _Visitor(ast.NodeVisitor):
                 ))
         self.generic_visit(node)
 
+    @staticmethod
+    def _risky_args(qn: str, node: ast.Call) -> tuple[str, float] | None:
+        """Calls that are only over-privileged with certain literal arguments."""
+        if qn in {"open", "io.open"} and node.args:
+            path = _const_str(node.args[0])
+            if path and path.startswith(SENSITIVE_PATH_PREFIXES):
+                return "reads sensitive filesystem path", 0.8
+        if qn in {"os.chmod", "os.fchmod", "os.lchmod"} and len(node.args) >= 2:
+            mode = node.args[1]
+            if isinstance(mode, ast.Constant) and mode.value == WORLD_WRITABLE:
+                return "sets world-writable permissions", 0.8
+        return None
+
 
 def analyze_python_file(file_path: str, source: str) -> Iterable[Finding] | None:
     """Return AST-derived findings for a .py file, or None if it doesn't parse."""
@@ -175,6 +260,6 @@ def analyze_python_file(file_path: str, source: str) -> Iterable[Finding] | None
         tree = ast.parse(source)
     except SyntaxError:
         return None
-    v = _Visitor(file_path, source)
+    v = _Visitor(file_path, source, _collect_aliases(tree))
     v.visit(tree)
     return v.findings
