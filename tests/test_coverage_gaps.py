@@ -154,8 +154,15 @@ def _tarball(members: dict[str, bytes]) -> bytes:
 
 
 class _Resp:
-    def __init__(self, content):
-        self.status_code, self.content = 200, content
+    def __init__(self, content, status_code=200):
+        self.status_code, self.content = status_code, content
+
+    def iter_content(self, chunk_size=1):
+        for i in range(0, len(self.content), chunk_size):
+            yield self.content[i:i + chunk_size]
+
+    def close(self):
+        pass
 
 
 def _serve(monkeypatch, members):

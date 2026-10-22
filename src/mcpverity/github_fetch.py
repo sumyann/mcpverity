@@ -9,10 +9,14 @@ import io
 import re
 import tarfile
 from dataclasses import dataclass, field
+from urllib.parse import quote
 
 import requests
 
 from .file_filter import LOCKFILE_NAMES, MAX_FILE_BYTES, MAX_TOTAL_FILES, SCAN_EXTENSIONS, classify, oversize_note
+
+MAX_TARBALL_BYTES = 100_000_000  # compressed; refuse rather than buffer an unbounded download
+MAX_REF_SEGMENTS = 10  # `/tree/a/b/c/...`: how many prefixes to try as the ref
 
 # Re-exported for benchmark/refresh_fixtures.py.
 ALLOWED_EXT = SCAN_EXTENSIONS
@@ -24,13 +28,52 @@ class GitHubFetchError(Exception):
     pass
 
 
+_REPO_URL_RE = re.compile(
+    r"https?://(?:www\.)?github\.com/(?P<owner>[A-Za-z0-9-]+)/(?P<repo>[A-Za-z0-9._-]+?)(?:\.git)?"
+    r"(?:/tree/(?P<rest>[^?#]+?))?/?(?:[?#].*)?"
+)
+
+
 def parse_repo_url(url: str) -> tuple[str, str, str]:
-    """Return (owner, repo, ref)."""
-    m = re.match(r"https?://github\.com/([^/]+)/([^/#?]+)(?:/tree/([^/#?]+))?", url.strip())
+    """Return (owner, repo, ref_path).
+
+    ref_path is "HEAD" (the repo's default branch) or everything after
+    `/tree/`, which may be a slash-containing branch name followed by a
+    subdirectory -- `fetch_repo_files_detailed` works out where the ref ends.
+    """
+    m = _REPO_URL_RE.fullmatch(url.strip())
     if not m:
-        raise GitHubFetchError("Not a valid github.com repo URL")
-    owner, repo, ref = m.group(1), m.group(2).replace(".git", ""), m.group(3) or "HEAD"
-    return owner, repo, ref
+        raise GitHubFetchError("Not a valid github.com repo URL (expected https://github.com/<owner>/<repo>[/tree/<ref>[/<dir>]])")
+    return m["owner"], m["repo"], m["rest"] or "HEAD"
+
+
+def _download(tar_url: str) -> bytes | None:
+    """Return the tarball bytes, None on 404, or raise on any other failure or oversize."""
+    r = requests.get(tar_url, timeout=25, stream=True)
+    if r.status_code == 404:
+        return None
+    if r.status_code != 200:
+        raise GitHubFetchError(f"GitHub returned {r.status_code} for {tar_url}")
+    buf = bytearray()
+    for chunk in r.iter_content(chunk_size=1 << 16):
+        buf += chunk
+        if len(buf) > MAX_TARBALL_BYTES:
+            r.close()
+            raise GitHubFetchError(f"Repo tarball exceeds {MAX_TARBALL_BYTES // 1_000_000} MB; "
+                                   "clone it and scan locally instead.")
+    return bytes(buf)
+
+
+def _fetch_tarball(owner: str, repo: str, ref_path: str) -> tuple[bytes, str]:
+    """Return (tarball, subdir). Tries ref prefixes shortest-first, since branch names may contain '/'."""
+    segments = ref_path.split("/")
+    for i in range(1, min(len(segments), MAX_REF_SEGMENTS) + 1):
+        ref = "/".join(segments[:i])
+        blob = _download(f"https://codeload.github.com/{owner}/{repo}/tar.gz/{quote(ref, safe='/')}")
+        if blob is not None:
+            return blob, "/".join(segments[i:])
+    raise GitHubFetchError(f"GitHub returned 404 for {owner}/{repo} at '{ref_path}' "
+                           "(repo is private or missing, or the branch/tag/commit doesn't exist)")
 
 
 @dataclass
@@ -51,20 +94,11 @@ def fetch_repo_files(url: str) -> list[dict]:
 
 def fetch_repo_files_detailed(url: str) -> FetchResult:
     """Fetch a repo's scannable files and record which ones were passed over and why."""
-    owner, repo, ref = parse_repo_url(url)
-    for candidate in ([ref] if ref != "HEAD" else ["main", "master"]):
-        tar_url = f"https://codeload.github.com/{owner}/{repo}/tar.gz/refs/heads/{candidate}"
-        r = requests.get(tar_url, timeout=25, stream=True)
-        if r.status_code == 200:
-            break
-    else:
-        # last chance: try as tag/sha
-        tar_url = f"https://codeload.github.com/{owner}/{repo}/tar.gz/{ref}"
-        r = requests.get(tar_url, timeout=25, stream=True)
-        if r.status_code != 200:
-            raise GitHubFetchError(f"GitHub returned {r.status_code} for {url}")
+    owner, repo, ref_path = parse_repo_url(url)
+    blob, subdir = _fetch_tarball(owner, repo, ref_path)
+    prefix = f"{subdir}/" if subdir else ""
 
-    buf = io.BytesIO(r.content)
+    buf = io.BytesIO(blob)
     result = FetchResult()
     with tarfile.open(fileobj=buf, mode="r:gz") as tf:
         for member in tf.getmembers():
@@ -72,6 +106,11 @@ def fetch_repo_files_detailed(url: str) -> FetchResult:
                 continue
             path_parts = member.name.split("/", 1)
             rel = path_parts[1] if len(path_parts) > 1 else member.name
+            if prefix:
+                # /tree/<ref>/<dir>: scan that directory as the root, like a local subdir scan.
+                if not rel.startswith(prefix):
+                    continue
+                rel = rel[len(prefix):]
             kind = classify(rel)
             if kind is None:
                 continue
