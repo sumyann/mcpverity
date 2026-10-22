@@ -15,9 +15,11 @@ call or an LLM in the loop.
 
 ## Install
 
+MCPVerity is not on PyPI yet -- install straight from GitHub:
+
 ```bash
-pipx install mcpverity
-# or: pip install mcpverity
+pipx install git+https://github.com/sumyann/mcpverity
+# or: pip install git+https://github.com/sumyann/mcpverity
 ```
 
 ## 30-second quickstart
@@ -38,8 +40,11 @@ mcpverity scan examples/vulnerable-demo
 ```
 
 Optional: an LLM-assisted second pass that catches subtle tool-poisoning
-phrasing regex misses. Requires `pip install "mcpverity[llm]"` and
-`ANTHROPIC_API_KEY`:
+phrasing regex misses. Requires the `llm` extra
+(`pip install "mcpverity[llm] @ git+https://github.com/sumyann/mcpverity"`) and
+`ANTHROPIC_API_KEY`. If any part of the LLM pass fails (bad key, network,
+missing package) the scan exits 2 and says so on stderr -- it never reports a
+failed pass as clean:
 
 ```bash
 mcpverity scan ./my-server --llm-check

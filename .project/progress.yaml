@@ -1,13 +1,26 @@
 schema_version: 1
 project_id: mcpverity
-updated_at: null
+updated_at: 2026-10-21
 current_milestone: null
-completed: []
+completed:
+  - "E2E review fixes: W001 detects FastMCP tool docstrings, dict literals, and TS/JS descriptions"
+  - "E2E review fixes: W001 'leak' / 'system:' false positives tightened"
+  - "E2E review fixes: secrets redacted (len + sha256 fingerprint) from all findings and outputs"
+  - "E2E review fixes: no fail-open on ancestor dirs named build/dist/venv; empty scan exits 2"
+  - "E2E review fixes: GitHub Action installs from its own checkout; inputs passed via env"
+  - "E2E review fixes: --llm-check failures recorded in Scan.error and exit 2"
 in_progress: []
 blocked: []
-next: []
+next:
+  - "Plugin rules: engine uses BUILTIN_RULES, not all_rules(), contrary to docs/rule-authoring.md"
+  - "W004: alias imports (import subprocess as sp, from subprocess import run) evade AST; regex-only signals lost for parsed .py"
+  - "File collection: .env and *.lock not scanned; package-lock.json >200KB dropped; sk-proj and DSN credentials undetected"
+  - "False positives: JS RegExp.exec as eval, 'all' substring in permissions, engines field, README scanned as code, streamable-http always HIGH"
+  - "github_fetch: .git stripped mid-name, slash branches truncated, unbounded download"
+  - "Benchmark precision counts only labelled findings (9 of 150); notes text overstates"
+  - "Publish to PyPI (needs maintainer decision)"
 verification:
-  tests_passed: null
+  tests_passed: true
   validation_command: "python -m pytest"
 agent:
   provider: null

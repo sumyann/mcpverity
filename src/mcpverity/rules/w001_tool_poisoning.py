@@ -1,9 +1,8 @@
 """W001 -- Tool poisoning: injection patterns embedded in tool descriptions/metadata."""
-import re
 from collections.abc import Iterable
 
 from ..models import Finding
-from .base import DOCS_BASE, POISONING_RE, ParsedServer, Rule, confidence, find_line, snippet
+from .base import DOCS_BASE, POISONING_RE, ParsedServer, Rule, confidence, find_line, iter_description_literals, snippet
 
 
 def _check(parsed: ParsedServer) -> Iterable[Finding]:
@@ -49,13 +48,11 @@ def _check(parsed: ParsedServer) -> Iterable[Finding]:
     for f in files:
         if f["path"] in ast_covered:
             continue
-        for m in re.finditer(r"(?:description|prompt|instructions)\s*=\s*(['\"])(.+?)\1",
-                              f["content"], re.IGNORECASE | re.DOTALL):
-            val = m.group(2)
+        for start, val in iter_description_literals(f["content"]):
             hit = POISONING_RE.search(val)
             if not hit:
                 continue
-            line = find_line(f["content"], m.start())
+            line = find_line(f["content"], start)
             yield Finding(
                 rule_id="W001",
                 title="Tool poisoning in tool description",

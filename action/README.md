@@ -1,6 +1,7 @@
 # MCPVerity MCP Scan (GitHub Action)
 
-Composite action wrapping the `mcpverity` CLI. Installs `mcpverity` from PyPI,
+Composite action wrapping the `mcpverity` CLI. Installs `mcpverity` from the
+action's own checkout (so the scanner version matches the ref in `uses:`),
 scans a path, writes a SARIF file, and fails the job if any finding meets
 the configured severity threshold.
 

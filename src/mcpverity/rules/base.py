@@ -5,6 +5,7 @@ of Findings — no I/O, no network, no persistence. That's a deliberate
 invariant: `pip install mcpverity` plus `mcpverity scan ./some-dir` must never
 make a network call. See docs/architecture.md.
 """
+import hashlib
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -67,10 +68,15 @@ POISONING_PHRASES = [
     r"disregard (the )?(previous|system|user)",
     r"do not (mention|reveal|tell)",
     r"you (are|must) (now )?(act as|behave|pretend)",
-    r"system\s*:\s*",
+    # A `system:` role marker only at the start of the text / a line / a
+    # bracket -- not prose like "operating system: Linux".
+    r"(^|[\n\[<(])\s*system\s*:",
     r"<\s*system\s*>",
+    r"<\s*important\s*>",
     r"before responding.*read.*(file|url|http|ssh)",
-    r"exfiltrate|silently send|leak",
+    # "leak" only as an exfil verb with a sensitive object -- not "memory leaks".
+    r"\bexfiltrat\w*|\bsilently send|\bleak (the |any |all |their )?(user'?s? |your )?"
+    r"(data|secrets?|credentials?|keys?|tokens?|passwords?|contents?|files?|history)\b",
     r"return the (user'?s |your )?(api key|password|token|secret)",
     r"read\s+(~/\.ssh|/etc/passwd|\.env|id_rsa)",
     r"do this without (asking|notifying|informing)",
@@ -78,6 +84,30 @@ POISONING_PHRASES = [
     r"<!--.*(system|instruction).*-->",
 ]
 POISONING_RE = re.compile("|".join(f"({p})" for p in POISONING_PHRASES), re.IGNORECASE)
+
+# Model-visible description literals in non-AST files:
+#   description = "..."             (Python kwargs / assignments)
+#   description: "..." / "description": "..."   (JS/TS object literals)
+# String bodies consume escape pairs (`\\`, `\"`) as units, so a literal
+# ending in an escaped backslash closes at its own quote instead of
+# swallowing the next description.
+DESCRIPTION_LITERAL_RE = re.compile(
+    r"(?:description|prompt|instructions)['\"]?\s*[:=]\s*(['\"`])((?:\\.|(?!\1)[^\\])*)\1",
+    re.IGNORECASE | re.DOTALL,
+)
+# TS/JS SDK positional form: server.tool("name", "description", ...)
+TOOL_POSITIONAL_DESC_RE = re.compile(
+    r"\.(?:tool|prompt)\(\s*(['\"`])[^'\"`]*\1\s*,\s*(['\"`])((?:\\.|(?!\2)[^\\])*)\2",
+    re.DOTALL,
+)
+
+
+def iter_description_literals(content: str):
+    """Yield (match_start, description_text) for every description literal in a non-Python file."""
+    for m in DESCRIPTION_LITERAL_RE.finditer(content):
+        yield m.start(), m.group(2)
+    for m in TOOL_POSITIONAL_DESC_RE.finditer(content):
+        yield m.start(), m.group(3)
 
 UNTRUSTED_INGEST_SIGNALS = [
     r"\brequests?\.get\(", r"\bhttpx\.", r"\burllib\.request", r"\bfetch\(",
@@ -154,6 +184,26 @@ def snippet(content: str, line: int, ctx: int = 1) -> str:
     lines = content.splitlines()
     lo, hi = max(0, line - 1 - ctx), min(len(lines), line + ctx)
     return "\n".join(lines[lo:hi])
+
+
+def fingerprint(value: str) -> str:
+    """Non-reversible identifier for a secret: length + sha256 prefix."""
+    return f"len={len(value)},sha256={hashlib.sha256(value.encode('utf-8')).hexdigest()[:8]}"
+
+
+def redact_secret(value: str) -> str:
+    return f"{value[:4]}…[REDACTED {fingerprint(value)}]"
+
+
+def redact_secrets(text: str) -> str:
+    """Replace every SECRET_PATTERNS match in `text` with a redacted fingerprint.
+
+    Findings are written to terminals, JSON files, and SARIF uploaded to
+    GitHub code scanning -- a scanner must never copy the secret it found.
+    """
+    for _, pat in SECRET_PATTERNS:
+        text = pat.sub(lambda m: redact_secret(m.group(0)), text)
+    return text
 
 
 def find_line(content: str, match_start: int) -> int:

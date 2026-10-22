@@ -16,9 +16,14 @@ matches over regex fallback matches -- see [architecture.md](./architecture.md#c
 
 Malicious or manipulative instructions embedded in tool description/metadata
 fields -- invisible to human review but read as trusted by the model. Prefers
-an AST walk over Python tool-decorator/docstring literals (skips comments,
-so `# ignore all previous instructions` in a code comment does not fire);
-falls back to regex over non-Python files.
+an AST walk over Python: `description=`/`prompt=`/`instructions=` keyword
+arguments and assignments, `{"description": ...}` dict literals, and the
+docstring of any `@tool`/`@prompt`/`@resource`-decorated function (FastMCP
+uses that docstring as the tool description). Comments and ordinary
+docstrings are skipped, so `# ignore all previous instructions` in a code
+comment does not fire. Non-Python files fall back to regex over
+`description = "..."`, `description: "..."` (JS/TS object literals), and the
+TS/JS SDK positional form `server.tool("name", "description", ...)`.
 
 ## W002 Indirect Prompt-Injection Surface (XPIA)
 
@@ -37,6 +42,11 @@ into model-visible context. Matches common key formats (`sk-`, `sk-ant-`,
 `AKIA`, `gh[pousr]_`, `AIza`, `xox[baprs]-`, generic high-entropy assignment).
 Reading a secret from an environment variable or secret manager does not fire
 this rule -- only literal hardcoded values do.
+
+The matched value is never echoed: snippets and messages in every output
+format (terminal, JSON, SARIF) show only the first four characters plus a
+`[REDACTED len=N,sha256=xxxxxxxx]` fingerprint, so two reports can be
+compared without either containing the secret.
 
 ## W004 Over-Privileged Tools
 

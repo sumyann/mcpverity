@@ -7,8 +7,9 @@ Recognises three kinds of files:
   - everything else -- treated as code files (regex + string search)
 """
 import json
-import re
 from typing import Any
+
+from .rules.base import iter_description_literals
 
 MANIFEST_NAMES = {"mcp.json", "manifest.json", "server.json", "mcp-manifest.json", ".mcp.json"}
 
@@ -113,11 +114,10 @@ def extract_tool_descriptions(context: dict[str, Any]) -> list[dict[str, str]]:
                     "description": desc,
                 })
     for f in context["files"]:
-        for m in re.finditer(r"(?:description|prompt|instructions)\s*=\s*(['\"])(.+?)\1",
-                              f["content"], re.IGNORECASE | re.DOTALL):
+        for _, desc in iter_description_literals(f["content"]):
             out.append({
                 "source": f["path"],
                 "tool_name": "inline",
-                "description": m.group(2)[:1000],
+                "description": desc[:1000],
             })
     return out

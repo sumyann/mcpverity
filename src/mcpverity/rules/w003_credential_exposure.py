@@ -3,7 +3,7 @@ import re
 from collections.abc import Iterable
 
 from ..models import Finding
-from .base import DOCS_BASE, SECRET_PATTERNS, ParsedServer, Rule, confidence, find_line, snippet
+from .base import DOCS_BASE, SECRET_PATTERNS, ParsedServer, Rule, confidence, find_line, redact_secret, redact_secrets, snippet
 
 
 def _check(parsed: ParsedServer) -> Iterable[Finding]:
@@ -23,8 +23,8 @@ def _check(parsed: ParsedServer) -> Iterable[Finding]:
                     severity="CRITICAL",
                     file_path=f["path"],
                     line=line,
-                    snippet=snippet(f["content"], line, 1),
-                    message=f"{label} appears hardcoded (`{secret[:12]}...`). This value ships with the code and is model-visible if injected into context.",
+                    snippet=redact_secrets(snippet(f["content"], line, 1)),
+                    message=f"{label} appears hardcoded (`{redact_secret(secret)}`). This value ships with the code and is model-visible if injected into context.",
                     remediation="Move the secret to an environment variable, load it via os.environ, and rotate the exposed key immediately.",
                     doc_link=f"{DOCS_BASE}#w003-credential--secret-exposure",
                     tags=["secret", "credential"],
@@ -54,7 +54,7 @@ def _check(parsed: ParsedServer) -> Iterable[Finding]:
                             severity="CRITICAL",
                             file_path=m["_path"],
                             line=None,
-                            snippet=f"env.{env_name} = \"{env_val[:24]}...\"",
+                            snippet=f"env.{env_name} = \"{redact_secret(env_val)}\"",
                             message=f"Server '{srv.get('name')}' has literal env var `{env_name}` embedded in the mcpServers config. Anyone with read access to the config gets the key.",
                             remediation="Replace the literal with a placeholder like `${" + env_name + "}` and load it from the host environment or a secrets manager.",
                             doc_link=f"{DOCS_BASE}#w003-credential--secret-exposure",
@@ -70,7 +70,7 @@ def _check(parsed: ParsedServer) -> Iterable[Finding]:
                     severity="CRITICAL",
                     file_path=m["_path"],
                     line=None,
-                    snippet=mt.group(0)[:80],
+                    snippet=redact_secret(mt.group(0)),
                     message=f"{label} embedded in MCP manifest.",
                     remediation="Reference secrets via env placeholder (e.g. ${API_KEY}), never literal values.",
                     doc_link=f"{DOCS_BASE}#w003-credential--secret-exposure",

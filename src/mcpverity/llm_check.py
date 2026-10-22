@@ -11,6 +11,7 @@ tests/test_llm_check_optional.py.
 import json
 import os
 import re
+from dataclasses import dataclass, field
 
 from .models import Finding
 from .rules.base import REPO_URL
@@ -31,27 +32,51 @@ Rules:
 MODEL = "claude-sonnet-4-6"
 
 
+@dataclass
+class LLMCheckResult:
+    """Outcome of the LLM pass. `errors` is non-empty whenever any part of the
+    pass did not run -- callers must surface it rather than treat silence as
+    "clean" (a broken key would otherwise look like a passing check)."""
+    findings: list[Finding] = field(default_factory=list)
+    attempted: int = 0
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def failed_completely(self) -> bool:
+        return bool(self.errors) and len(self.errors) >= max(self.attempted, 1)
+
+
 async def run_llm_check(tool_descriptions: list[dict], scan_id: str) -> list[Finding]:
     """Run an optional Claude-assisted pass over tool descriptions.
 
     Requires ANTHROPIC_API_KEY and the `anthropic` package (install with
     `pip install mcpverity[llm]`). Degrades to an empty list -- never
-    raises -- if either is missing, or if any individual call fails.
+    raises -- if either is missing, or if any individual call fails. Use
+    `run_llm_check_detailed` to find out whether the pass actually ran.
     """
+    return (await run_llm_check_detailed(tool_descriptions)).findings
+
+
+async def run_llm_check_detailed(tool_descriptions: list[dict]) -> LLMCheckResult:
+    """Like `run_llm_check`, but reports what failed instead of hiding it."""
+    result = LLMCheckResult()
     api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key or not tool_descriptions:
-        return []
+    if not tool_descriptions:
+        return result
+    if not api_key:
+        result.errors.append("ANTHROPIC_API_KEY is not set")
+        return result
 
     try:
         import anthropic
     except ImportError:
-        # Optional dependency not installed -- skip the LLM pass.
-        return []
+        result.errors.append("the `anthropic` package is not installed (pip install 'mcpverity[llm]')")
+        return result
 
     client = anthropic.AsyncAnthropic(api_key=api_key)
 
-    findings: list[Finding] = []
     for td in tool_descriptions[:20]:  # cap to 20 to keep fast
+        result.attempted += 1
         try:
             resp = await client.messages.create(
                 model=MODEL,
@@ -71,7 +96,7 @@ async def run_llm_check(tool_descriptions: list[dict], scan_id: str) -> list[Fin
             verdict = data.get("verdict", "clean").lower()
             if verdict in ("suspicious", "malicious"):
                 sev = "CRITICAL" if verdict == "malicious" else "HIGH"
-                findings.append(Finding(
+                result.findings.append(Finding(
                     rule_id="W001-LLM",
                     title=f"LLM-flagged {verdict} tool description",
                     severity=sev,
@@ -83,7 +108,8 @@ async def run_llm_check(tool_descriptions: list[dict], scan_id: str) -> list[Fin
                     doc_link=f"{REPO_URL}/blob/main/docs/rules.md#w001-tool-poisoning",
                     tags=["poisoning", "llm-assist"],
                 ))
-        except Exception:  # noqa: BLE001 -- LLM failures never break the scan
+        except Exception as e:  # noqa: BLE001 -- LLM failures never break the scan, but are reported
+            result.errors.append(f"{td['tool_name']}: {type(e).__name__}")
             continue
 
-    return findings
+    return result
