@@ -54,8 +54,14 @@ compared without either containing the secret.
 
 Tools requesting filesystem, network, or shell scope broader than their
 stated function -- least-privilege violations. AST-verified for Python
-(`subprocess.*`, `os.system`, `eval`/`exec`, `shutil.rmtree`, `shell=True`);
-regex fallback for other languages. Also checks `mcpServers` launcher configs
+(`subprocess.*`, `os.system`/`exec*`/`spawn*`/`posix_spawn*`, `pty.spawn`,
+`asyncio.create_subprocess_*`, `eval`/`exec`, `shutil.rmtree`, `shell=True`,
+`open()` on `/etc`, `/root`, `/home`, `/var`, `/usr`, and `os.chmod(..., 0o777)`).
+Calls are resolved through imports and simple indirection, so
+`import subprocess as sp`, `from os import system as s`, `from os import *`,
+`getattr(os, "system")`, `__import__("os")`, `importlib.import_module(...)`
+and `builtins.exec` are all caught; the finding names what the call was
+written as. Regex fallback for other languages and unparseable Python. Also checks `mcpServers` launcher configs
 for wildcard flags (`--allow-all`, `--dangerously-*`, `--privileged`,
 `--network=host`, host-root docker mounts) and manifest `permissions`/`scopes`
 fields for broad wildcards.
