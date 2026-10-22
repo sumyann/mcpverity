@@ -45,12 +45,18 @@ RULE = Rule(
 ```
 
 Anyone with your package installed alongside `mcpverity` gets your rule
-picked up automatically by `mcpverity.rules.all_rules()` (the CLI uses this,
-not the `BUILTIN_RULES`-only list). A broken plugin rule can never crash a
-scan -- `all_rules()` swallows exceptions raised while loading a plugin, and
-`engine.run_scan()` swallows exceptions raised while a rule's `.check()` is
-running, converting either into a single `INFO`-severity `{rule_id}-ERR`
-finding instead.
+run by every scan (`engine.run_scan()` loads plugins via
+`mcpverity.rules.load_plugin_rules()`) and listed by `mcpverity rules`.
+
+A broken plugin rule can never crash a scan, and never disappears silently:
+
+- an entry point that fails to import, or that doesn't resolve to a `Rule`,
+  becomes one `INFO`-severity `PLUGIN-ERR` finding naming the entry point;
+- an exception raised inside a rule's `.check()` becomes one `INFO`-severity
+  `{rule_id}-ERR` finding.
+
+The CLI also prints each of these as a warning on stderr, so they show up in
+CI logs even with `-o json` / `-o sarif`.
 
 ## What we expect from a rule PR to this repo
 

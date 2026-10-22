@@ -33,34 +33,45 @@ BUILTIN_RULES = [
 ]
 
 
-def _discover_plugin_rules() -> list:
-    """Load third-party rules registered under the `mcpverity.rules` entry-point group."""
+def load_plugin_rules() -> tuple[list[Rule], list[tuple[str, str]]]:
+    """Load third-party rules registered under the `mcpverity.rules` entry-point group.
+
+    Returns (rules, errors) where each error is (entry point, reason). A broken
+    plugin must never break core scanning -- but it must not vanish silently
+    either, so callers report the errors (engine.run_scan emits a PLUGIN-ERR
+    finding for each).
+    """
     try:
         from importlib.metadata import entry_points
     except ImportError:  # pragma: no cover - py<3.10 fallback, unsupported but defensive
-        return []
+        return [], []
 
-    plugins = []
+    plugins: list[Rule] = []
+    errors: list[tuple[str, str]] = []
     try:
         eps = entry_points(group="mcpverity.rules")
     except TypeError:  # pragma: no cover - very old importlib.metadata signature
         eps = entry_points().get("mcpverity.rules", [])
     for ep in eps:
+        label = f"{ep.name} = {ep.value}"
         try:
             rule = ep.load()
-            if isinstance(rule, Rule):
-                plugins.append(rule)
-        except Exception:  # noqa: BLE001 - a broken plugin must never break core scanning
+        except Exception as e:  # noqa: BLE001 - reported, never raised
+            errors.append((label, f"failed to load: {type(e).__name__}: {e}"))
             continue
-    return plugins
+        if isinstance(rule, Rule):
+            plugins.append(rule)
+        else:
+            errors.append((label, f"is a {type(rule).__name__}, not a mcpverity.rules.base.Rule"))
+    return plugins, errors
 
 
 def all_rules() -> list:
-    """Built-in rules plus any discovered plugin rules, built-ins first."""
-    return [*BUILTIN_RULES, *_discover_plugin_rules()]
+    """Built-in rules plus any successfully loaded plugin rules, built-ins first."""
+    return [*BUILTIN_RULES, *load_plugin_rules()[0]]
 
 
-# Back-compat alias used by mcpverity.engine at import time.
+# Back-compat alias: built-ins only. engine.run_scan adds plugin rules on top.
 ALL_RULES = BUILTIN_RULES
 
-__all__ = ["ParsedServer", "Rule", "BUILTIN_RULES", "ALL_RULES", "all_rules"]
+__all__ = ["ParsedServer", "Rule", "BUILTIN_RULES", "ALL_RULES", "all_rules", "load_plugin_rules"]

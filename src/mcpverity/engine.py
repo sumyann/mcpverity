@@ -5,7 +5,7 @@ from .identity import suppression_hash
 from .llm_check import run_llm_check_detailed
 from .models import SEVERITY_ORDER, Finding, Scan, ScanSummary
 from .parsers import extract_tool_descriptions, parse_files
-from .rules import ALL_RULES, ParsedServer
+from .rules import ALL_RULES, ParsedServer, load_plugin_rules
 from .rules.base import redact_secrets
 
 SEVERITY_WEIGHT = {"CRITICAL": 25, "HIGH": 12, "MEDIUM": 5, "LOW": 2, "INFO": 0}
@@ -64,7 +64,19 @@ async def run_scan(
     parsed = ParsedServer(files=ctx["files"], manifests=ctx["manifests"])
 
     findings: list[Finding] = []
-    for rule in ALL_RULES:
+    plugin_rules, plugin_errors = load_plugin_rules()
+    for label, reason in plugin_errors:
+        findings.append(Finding(
+            rule_id="PLUGIN-ERR",
+            title="Plugin rule failed to load",
+            severity="INFO",
+            file_path="(engine)",
+            line=None,
+            message=f"Plugin rule `{label}` {reason}. Its checks did not run.",
+            remediation="Fix or uninstall the plugin package that registers this entry point.",
+            snippet=label,  # distinct per plugin so _dedupe keeps one finding each
+        ))
+    for rule in [*ALL_RULES, *plugin_rules]:
         try:
             findings.extend(rule.check(parsed))
         except Exception as e:  # noqa: BLE001 -- a broken rule must never crash the scan
