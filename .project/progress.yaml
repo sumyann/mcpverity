@@ -12,13 +12,13 @@ completed:
   - "Plugin rules run in every scan and are listed by `mcpverity rules`; load failures become PLUGIN-ERR findings + stderr warning"
   - "File selection shared by local and GitHub scans (file_filter.py): .mjs/.cjs/.mts/.cts and .env* scanned; lockfiles kept as markers at any size"
   - "Oversize/unreadable files and the GitHub 200-file cap are reported on stderr instead of dropped silently"
+  - "--github: default branch via HEAD, slash-containing refs and /tree/<ref>/<dir> subdirs resolved, .git only stripped as a suffix, www. accepted, tarball download capped at 100 MB"
 in_progress: []
 blocked: []
 next:
   - "W004: alias imports (import subprocess as sp, from subprocess import run) evade AST; regex-only signals lost for parsed .py"
   - "Secret patterns: sk-proj and DSN credentials undetected"
   - "False positives: JS RegExp.exec as eval, 'all' substring in permissions, engines field, README scanned as code, streamable-http always HIGH"
-  - "github_fetch: .git stripped mid-name, slash branches truncated, unbounded download"
   - "Benchmark precision counts only labelled findings (9 of 150); notes text overstates"
   - "Publish to PyPI (needs maintainer decision)"
 verification:

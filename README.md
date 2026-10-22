@@ -29,7 +29,8 @@ mcpverity scan ./my-server
 ```
 
 ```bash
-# Scan a public GitHub repo directly
+# Scan a public GitHub repo directly (default branch, or any branch/tag/commit
+# and optional subdirectory: .../tree/<ref>/<dir>)
 mcpverity scan --github https://github.com/owner/repo
 
 # CI-friendly: SARIF output, fail the build on high+ severity
